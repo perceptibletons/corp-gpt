@@ -1,0 +1,8 @@
+streamlit
+langchain
+pypdf
+python-docx
+chromadb
+pysqlite3-binary # Fixes SQLite/ChromaDB deployment issues
+sentence-transformers
+transformers
