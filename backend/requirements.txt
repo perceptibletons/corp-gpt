@@ -1,8 +1,20 @@
-streamlit
+fastapi
+uvicorn[standard]
+python-dotenv
+sqlalchemy
+alembic
+pydantic
+bcrypt
+pyjwt
+pyotp
+python-multipart
+sentence-transformers
+transformers
+torch           # optional but recommended for transformers
+chromadb
 langchain
 pypdf
 python-docx
-chromadb
-pysqlite3-binary # Fixes SQLite/ChromaDB deployment issues
-sentence-transformers
-transformers
+python-dotenv
+email-validator
+
