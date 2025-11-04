@@ -41,5 +41,5 @@ class AuditLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     action = Column(String(255), nullable=False)
-    metadata = Column(Text, nullable=True)
+    meta_info = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
