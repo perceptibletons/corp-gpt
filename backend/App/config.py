@@ -8,12 +8,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Database
 DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "MysticEldrago")
 DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "corpgpt")
 
-SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
+SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://root:MysticEldrago!@localhost:3306/corpgpt"
 
 # JWT
 JWT_SECRET = os.getenv("JWT_SECRET", "change-this-secret")
@@ -31,7 +31,8 @@ EMAIL_FROM = os.getenv("EMAIL_FROM", SMTP_USER)
 # File storage & encryption key
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", str(BASE_DIR / "uploads"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-FERNET_KEY = os.getenv("FERNET_KEY")  # base64 urlsafe 32-byte key. Generate if not present.
+FERNET_KEY = os.getenv("FERNET_KEY", "IaMFfj5SQ3mU0e54NKT796a96Iz0PhtppY")
+ # base64 urlsafe 32-byte key. Generate if not present.
 
 # Security toggles
 REQUIRE_EMAIL_DOMAIN = os.getenv("REQUIRE_EMAIL_DOMAIN")  # e.g. "@yourcompany.com"
