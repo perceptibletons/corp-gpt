@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from .routes import auth
+from App.routes import auth 
 from .database import engine
 from . import models
 from .config import JWT_SECRET

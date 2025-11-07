@@ -13,7 +13,8 @@ DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "corpgpt")
 
-SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://root:MysticEldrago!@localhost:3306/corpgpt"
+SQLALCHEMY_DATABASE_URI = f"mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 
 # JWT
 JWT_SECRET = os.getenv("JWT_SECRET", "change-this-secret")
