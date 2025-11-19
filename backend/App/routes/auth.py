@@ -13,6 +13,10 @@ from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+
+# ================================================================
+# SIGNUP (with Corporate Roles)
+# ================================================================
 @router.post("/signup", response_model=schemas.SignupResponse, status_code=201)
 def signup(
     request: Request,
@@ -22,19 +26,42 @@ def signup(
     companyId: str = Form(None),
     inviteCode: str = Form(None),
     phone: str = Form(None),
+    role: str = Form("employee"),           # NEW - frontend must send role
     proof: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
-    # enforce company domain if configured
+
+    # enforce company domain
     if REQUIRE_EMAIL_DOMAIN and not email.lower().endswith(REQUIRE_EMAIL_DOMAIN.lower()):
         raise HTTPException(status_code=400, detail="Email must be corporate domain.")
 
-    # check existing
+    # check existing email
     exists = db.query(models.User).filter(models.User.email == email.lower()).first()
     if exists:
         raise HTTPException(status_code=400, detail="Email already registered.")
 
+    # ============================
+    # CORPORATE ROLE HANDLING
+    # ============================
+    allowed_roles = [
+        models.RoleEnum.employee,
+        models.RoleEnum.intern
+    ]
+
+    # Convert to ENUM
+    try:
+        requested_role = models.RoleEnum(role)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid role value")
+
+    # Prevent employees signing up directly as admin/hr/manager/accountant
+    if requested_role not in allowed_roles:
+        requested_role = models.RoleEnum.employee
+
+    # hash password
     hashed = hash_password(password)
+
+    # create user
     user = models.User(
         name=name,
         email=email.lower(),
@@ -44,10 +71,10 @@ def signup(
         phone=phone,
         is_verified=False,
         is_approved=False,
-        role=models.RoleEnum.user,
+        role=requested_role,          # UPDATED
     )
 
-    # handle uploaded proof file (encrypt and save)
+    # handle uploaded proof
     if proof:
         raw = proof.file.read()
         filename = f"{int(datetime.utcnow().timestamp())}_{proof.filename}"
@@ -58,15 +85,25 @@ def signup(
     db.commit()
     db.refresh(user)
 
-    # create OTP record & email - short lived
+    # OTP generation
     otp_code = generate_numeric_otp(6)
     expires_at = datetime.utcnow() + timedelta(minutes=12)
-    otp = models.OTPVerification(user_id=user.id, otp_code=otp_code, expires_at=expires_at, is_used=False)
+    otp = models.OTPVerification(
+        user_id=user.id,
+        otp_code=otp_code,
+        expires_at=expires_at,
+        is_used=False
+    )
     db.add(otp)
     db.commit()
 
+    # send email OTP
     try:
-        send_email(user.email, "CorpGPT: Verify your email", f"Your verification OTP is: {otp_code}. It expires in 12 minutes.")
+        send_email(
+            user.email,
+            "CorpGPT: Verify your email",
+            f"Your verification OTP is: {otp_code}. It expires in 12 minutes."
+        )
     except Exception as e:
         print("Email send failed:", e)
 
@@ -75,6 +112,10 @@ def signup(
     return {"message": "Signup request received. Check your email for OTP to verify your account."}
 
 
+
+# ================================================================
+# VERIFY OTP
+# ================================================================
 @router.post("/verify", response_model=schemas.SignupResponse)
 def verify_otp(payload: schemas.VerifyOTPIn, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == payload.email.lower()).first()
@@ -103,6 +144,10 @@ def verify_otp(payload: schemas.VerifyOTPIn, db: Session = Depends(get_db)):
     return {"message": "Email verified successfully. Wait for admin approval if required."}
 
 
+
+# ================================================================
+# LOGIN
+# ================================================================
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(payload: schemas.LoginIn, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == payload.email.lower()).first()
@@ -122,7 +167,14 @@ def login(payload: schemas.LoginIn, db: Session = Depends(get_db)):
         if not verify_totp(user.totp_secret, payload.otp):
             raise HTTPException(status_code=401, detail="Invalid TOTP")
 
+    # Token includes ROLE
     access = create_access_token(subject=user.id, extra={"role": user.role.value})
     refresh = create_refresh_token(subject=user.id)
+
     log_action(user.id, "login")
-    return {"access_token": access, "refresh_token": refresh, "expires_in": None}
+    return {
+    "access_token": access,
+    "refresh_token": refresh,
+    "role": user.role.value,
+    "expires_in": None
+}

@@ -44,3 +44,14 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode = True
+        
+from pydantic import BaseModel
+
+class ApproveUserIn(BaseModel):
+    user_id: int
+    approve: bool
+
+class ChangeRoleIn(BaseModel):
+    user_id: int
+    new_role: str
+

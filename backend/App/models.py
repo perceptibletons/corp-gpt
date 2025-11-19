@@ -6,9 +6,15 @@ import enum
 from sqlalchemy.sql import func
 
 class RoleEnum(str, enum.Enum):
-    user = "user"
-    admin = "admin"
-    superadmin = "superadmin"
+    superadmin = "superadmin"   # System-level access
+    admin = "admin"             # Approves users, manages roles
+    manager = "manager"         # Team + project oversight
+    hr = "hr"                   # Handles employees, onboarding
+    employee = "employee"       # Normal corporate user
+    accountant = "accountant"   # Finance & payroll access
+    it_support = "it_support"   # IT / technical support
+    intern = "intern"           # Limited access
+
 
 class User(Base):
     __tablename__ = "users"
@@ -22,7 +28,7 @@ class User(Base):
     proof_path = Column(Text, nullable=True)  # encrypted file path
     is_verified = Column(Boolean, default=False)  # email verified
     is_approved = Column(Boolean, default=False)  # admin approval
-    role = Column(Enum(RoleEnum), default=RoleEnum.user)
+    role = Column(Enum(RoleEnum), default=RoleEnum.employee)
     totp_secret = Column(String(255), nullable=True)  # for TOTP if used
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())

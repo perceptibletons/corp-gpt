@@ -1,5 +1,6 @@
 from ..models import AuditLog
-from .database import SessionLocal
+from ..database import SessionLocal
+
 
 def log_action(user_id: int, action: str, metadata: str = None):
     db = SessionLocal()

@@ -11,19 +11,48 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setMsg("");
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, otp }),
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Login failed");
+      if (!res.ok) throw new Error(data.detail || data.message);
+
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("refresh_token", data.refresh_token);
+      localStorage.setItem("role", data.role); // NEW (backend includes role)
+
       setMsg("Login successful!");
-      // redirect to dashboard or home
-      window.location.href = "/dashboard";
+
+      // role-based redirect:
+      const role = data.role;
+
+      switch (role) {
+        case "superadmin":
+          window.location.href = "/superadmin/dashboard";
+          break;
+        case "admin":
+          window.location.href = "/admin/dashboard";
+          break;
+        case "manager":
+          window.location.href = "/manager/dashboard";
+          break;
+        case "hr":
+          window.location.href = "/hr/dashboard";
+          break;
+        case "accountant":
+          window.location.href = "/finance/dashboard";
+          break;
+        case "intern":
+          window.location.href = "/intern/dashboard";
+          break;
+        default:
+          window.location.href = "/dashboard";
+      }
     } catch (err) {
       setMsg(err.message);
     } finally {
@@ -42,6 +71,7 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+
         <input
           type="password"
           placeholder="Password"
@@ -49,16 +79,19 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+
         <input
           type="text"
-          placeholder="2FA Code (if enabled)"
+          placeholder="TOTP Code (if enabled)"
           value={otp}
           onChange={(e) => setOtp(e.target.value)}
         />
+
         <button type="submit" disabled={loading}>
           {loading ? "Authenticating..." : "Login"}
         </button>
       </form>
+
       {msg && <p style={{ color: msg.includes("failed") ? "red" : "green" }}>{msg}</p>}
     </div>
   );
