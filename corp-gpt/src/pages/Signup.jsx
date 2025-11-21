@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
-import Topbar from "../components/Topbar";
+import React, { useState } from "react";
+import axios from "axios";
+import "./Signup.css"; // we will write CSS below
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -9,131 +10,115 @@ export default function Signup() {
     companyId: "",
     inviteCode: "",
     phone: "",
-    role: "employee"   // NEW
+    role: "employee",
   });
 
   const [proof, setProof] = useState(null);
-  const [step, setStep] = useState(1);
-  const [otp, setOtp] = useState("");
-  const [msg, setMsg] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const fileRef = useRef();
 
-  function handleChange(e) {
+  const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  }
-
-  async function handleSignup(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMsg("");
     setError("");
+    setMessage("");
+  };
 
-    const fd = new FormData();
-    Object.entries(form).forEach(([key, val]) => fd.append(key, val));
-    if (proof) fd.append("proof", proof);
+  const handleFileChange = (e) => {
+    setProof(e.target.files[0]);
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        body: fd,
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("email", form.email);
+      formData.append("password", form.password);
+      formData.append("companyId", form.companyId);
+      formData.append("inviteCode", form.inviteCode);
+      formData.append("phone", form.phone);
+      formData.append("role", form.role);
+      if (proof) formData.append("proof", proof);
+
+      const res = await axios.post(
+        "http://127.0.0.1:8000/api/auth/signup",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      setMessage(res.data.message || "Signup successful. Check your email.");
+      setForm({
+        name: "",
+        email: "",
+        password: "",
+        companyId: "",
+        inviteCode: "",
+        phone: "",
+        role: "employee",
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.message || "Signup failed");
-
-      setMsg(data.message);
-      setStep(2);
+      setProof(null);
     } catch (err) {
-      setError(err.message);
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Signup failed. Try again.");
+      }
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleVerify(e) {
-    e.preventDefault();
-    setLoading(true);
-    setMsg("");
-    setError("");
-
-    try {
-      const res = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, otp }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.message);
-
-      setMsg("Email verified successfully!");
-      setStep(3);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  };
 
   return (
-    <div>
-      <Topbar />
-      <div className="container" style={{ maxWidth: 600, marginTop: "2rem" }}>
-        <h2>Signup for CorpGPT</h2>
+    <div className="signup-container">
+      <form className="signup-card" onSubmit={handleSubmit}>
+        <h2>Create Account</h2>
 
-        {step === 1 && (
-          <form onSubmit={handleSignup}>
-            <input name="name" placeholder="Full Name" onChange={handleChange} required />
-            <input name="email" type="email" placeholder="Corporate Email" onChange={handleChange} required />
-            <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
-            <input name="companyId" placeholder="Company ID" onChange={handleChange} />
-            <input name="inviteCode" placeholder="Invite Code" onChange={handleChange} />
-            <input name="phone" placeholder="Phone" onChange={handleChange} />
+        <div className="grid">
+          <input type="text" name="name" placeholder="Full Name"
+            value={form.name} onChange={handleChange} required />
 
-            {/* ROLE DROPDOWN */}
-            <select name="role" value={form.role} onChange={handleChange}>
-              <option value="employee">Employee</option>
-              <option value="intern">Intern</option>
-            </select>
+          <input type="email" name="email" placeholder="Email"
+            value={form.email} onChange={handleChange} required />
 
-            {/* PROOF UPLOAD */}
-            <input type="file" accept=".pdf,image/*" ref={fileRef} onChange={(e) => setProof(e.target.files[0])} />
+          <input type="password" name="password" placeholder="Password"
+            value={form.password} onChange={handleChange} required />
 
-            <button type="submit" disabled={loading}>
-              {loading ? "Submitting..." : "Signup"}
-            </button>
-          </form>
-        )}
+          <select name="role" value={form.role} onChange={handleChange}>
+            <option value="employee">Employee</option>
+            <option value="intern">Intern</option>
+            <option value="manager">Manager</option>
+            <option value="hr">HR</option>
+          </select>
 
-        {step === 2 && (
-          <form onSubmit={handleVerify}>
-            <p>Enter the OTP sent to <strong>{form.email}</strong></p>
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Enter OTP"
-              required
-            />
-            <button type="submit" disabled={loading}>
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </form>
-        )}
+          <input type="text" name="companyId" placeholder="Company ID"
+            value={form.companyId} onChange={handleChange} />
 
-        {step === 3 && (
-          <div>
-            <p style={{ color: "green" }}>Your email is verified!</p>
-            <p>Now wait for admin approval before logging in.</p>
-            <p>You can now <a href="/login">go to login</a>.</p>
-          </div>
-        )}
+          <input type="text" name="inviteCode" placeholder="Invite Code"
+            value={form.inviteCode} onChange={handleChange} />
 
-        {msg && <p style={{ color: "green" }}>{msg}</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </div>
+          <input type="text" name="phone" placeholder="Phone Number"
+            value={form.phone} onChange={handleChange} />
+        </div>
+
+        <div className="file-upload">
+          <label>Upload Proof Document:</label>
+          <input type="file" onChange={handleFileChange} />
+          {proof && <small>Selected: {proof.name}</small>}
+        </div>
+
+        {error && <p className="error">{error}</p>}
+        {message && <p className="success">{message}</p>}
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Creating..." : "Create Account"}
+        </button>
+      </form>
     </div>
   );
 }

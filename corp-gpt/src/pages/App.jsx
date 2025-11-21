@@ -19,7 +19,7 @@ export default function App() {
       <Route path="/admin/pending" element={<PendingApprovals />} />
       <Route path="/admin/user/:id" element={<UserDetails />} />
 
-      {/* Main Routes */}
+      {/* Auth Routes */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
