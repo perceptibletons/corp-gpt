@@ -5,7 +5,7 @@ import "./Signup.css"; // we will write CSS below
 export default function Signup() {
   const [form, setForm] = useState({
     name: "",
-    email: "",
+    email: "",  
     password: "",
     companyId: "",
     inviteCode: "",
@@ -49,7 +49,7 @@ export default function Signup() {
       const res = await axios.post(
         "http://127.0.0.1:8000/api/auth/signup",
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        
       );
 
       setMessage(res.data.message || "Signup successful. Check your email.");
